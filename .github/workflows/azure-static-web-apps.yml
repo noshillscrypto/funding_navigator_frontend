@@ -20,23 +20,21 @@ jobs:
         with:
           node-version: '18'
 
-      # 3) install & build your React app (inject API base)
+      # 3) install & build inside the frontend folder
       - name: Install dependencies
         working-directory: ./funding_navigator_frontend
-        run: npm ci
+        run: npm install
 
       - name: Build production bundle
         working-directory: ./funding_navigator_frontend
         env:
-          # ← This bakes it into CRA at build time
           REACT_APP_API_BASE: https://fn-navigator-api-app.azurewebsites.net
         run: npm run build
 
-      # 4) push the pre-built static assets directly into your SWA
+      # 4) upload the pre-built static site
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          # path **to** your built files
           app_artifact_location: funding_navigator_frontend/build
