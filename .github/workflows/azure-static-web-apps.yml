@@ -12,23 +12,25 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build And Deploy
+        # inject your React build‐time env var here, at the STEP level
+        env:
+          REACT_APP_API_BASE: https://fn-navigator-api-app.azurewebsites.net
+
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # auto-created when you connected the repo to your SWA
+          # ← your SWA API token (set automatically by Azure)
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          # standard GitHub checkout token
+          # ← standard GitHub token for checkout
           repo_token:                ${{ secrets.GITHUB_TOKEN }}
+
+          # ← upload only (no “github_id_token” nonsense)
           action:                    upload
 
-          # ── relative path *inside* your repo where package.json lives
-          app_location:              funding_navigator_frontend
+          # ── your CRA app lives in the repo root:
+          app_location:              .
 
-          # ── you don’t have any Azure Functions here
+          # ── you have no Azure Functions in this repo:
           api_location:              ""
 
-          # ── *inside* the app_location, that’s where npm run build drops index.html
+          # ── CRA’s `npm run build` writes into ./build
           output_location:           build
-
-          # ── inject your FastAPI URL into process.env at build time
-          env: |
-            REACT_APP_API_BASE=https://fn-navigator-api-app.azurewebsites.net
