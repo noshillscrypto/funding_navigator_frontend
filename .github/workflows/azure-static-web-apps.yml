@@ -1,4 +1,3 @@
-# .github/workflows/azure-static-web-apps.yml
 name: Azure Static Web Apps CI/CD
 
 on:
@@ -7,21 +6,32 @@ on:
       - main
 
 jobs:
-  build_and_deploy:
+  build_and_deploy_job:
     runs-on: ubuntu-latest
     steps:
+      # 1) Grab your code
       - uses: actions/checkout@v3
 
-      - name: Build & Deploy to Azure Static Web Apps
+      # 2) Install & build your CRA app
+      - name: Install & build
+        working-directory: ./funding_navigator_frontend
+        run: |
+          npm ci
+          npm run build
+
+      # 3) Deploy the built files to Azure Static Web Apps
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
+          # the token you added to your repo’s secrets
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          # this gives the action permission to read your repo
           repo_token:                ${{ secrets.GITHUB_TOKEN }}
-          action:                    "upload"
-          # where your CRA project lives
+          action:                    upload
+          # the folder that contains your app’s source code
           app_location:              "funding_navigator_frontend"
-          # after Oryx builds, it copies the CRA /build into /app, so point here:
-          output_location:           ""
+          # where CRA puts the production files, relative to app_location
+          output_location:           "funding_navigator_frontend/build"
         env:
-          # this tells React where your API lives at runtime
+          # at runtime your React app will call this host
           REACT_APP_API_BASE: "https://fn-navigator-api-app.azurewebsites.net"
