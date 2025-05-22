@@ -9,29 +9,30 @@ jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
     steps:
-      # 1) Grab your code
+      # 1) Checkout your code
       - uses: actions/checkout@v3
 
-      # 2) Install & build your CRA app
-      - name: Install & build
+      # 2) Ensure Node is available
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3) Install & build inside your actual React folder
+      - name: Install dependencies and build
         working-directory: ./funding_navigator_frontend
         run: |
-          npm ci
+          npm install
           npm run build
 
-      # 3) Deploy the built files to Azure Static Web Apps
+      # 4) Deploy the build output to SWA
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # the token you added to your repo’s secrets
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          # this gives the action permission to read your repo
-          repo_token:                ${{ secrets.GITHUB_TOKEN }}
-          action:                    upload
-          # the folder that contains your app’s source code
-          app_location:              "funding_navigator_frontend"
-          # where CRA puts the production files, relative to app_location
-          output_location:           "funding_navigator_frontend/build"
+          repo_token:                        ${{ secrets.GITHUB_TOKEN }}
+          action:                            upload
+          app_location:                      "funding_navigator_frontend"          
+          output_location:                   "funding_navigator_frontend/build"  
         env:
-          # at runtime your React app will call this host
           REACT_APP_API_BASE: "https://fn-navigator-api-app.azurewebsites.net"
