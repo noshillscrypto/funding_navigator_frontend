@@ -9,8 +9,7 @@ const initial = {
   prov: "BC",
   type: "profit",
   ccpc: "yes",
-  amount: 0,          // NEW – backend requires this
-  fte_idx: 2,
+   fte_idx: 2,
   rev_idx: 1,
   rd_idx: 2,
   tech: "ai",
