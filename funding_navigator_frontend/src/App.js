@@ -4,118 +4,135 @@ const API_BASE =
   process.env.REACT_APP_API_BASE ||
   "https://fn-navigator-api-app.azurewebsites.net";
 
-/* ---------- defaults that satisfy every required backend field ---------- */
-const initial = {
-  prov: "BC",
-  type: "profit",
-  ccpc: "yes",
-   fte_idx: 2,
-  rev_idx: 1,
-  rd_idx: 2,
-  tech: "ai",
-  trl: "prototype",
-  trl_idx: 1,
-  budget_idx: 2,
-  support: "grant",
-  start: "3-12m",
-  partner: true,
-  compute: true,
-};
-
-export default function App() {
-  const [answers, setAnswers] = useState(initial);
+function App() {
+  const [answers, setAnswers] = useState({
+    prov: "BC",
+    type: "profit",
+    ccpc: "yes",
+    fte_idx: 1,
+    rev_idx: 1,
+    rd_idx: 1,
+    tech: "ai",
+    trl: "idea",
+    trl_idx: 1,
+    budget_idx: 1,
+    support: "grant",
+    start: "<3m",
+    partner: false,
+    compute: false,
+  });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const update = (k) => (e) => {
+  const update = (name) => (e) => {
     const { type, checked, value } = e.target;
-    // cast numbers so the backend gets numbers, not strings
-    const cast = type === "number" ? +value : type === "checkbox" ? checked : value;
-    setAnswers((a) => ({ ...a, [k]: cast }));
+    setAnswers((a) => ({
+      ...a,
+      [name]: type === "checkbox" ? checked : (type === "number" ? Number(value) : value),
+    }));
   };
 
-  const check = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`${API_BASE}/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers),
       });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setResult(data);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------- tiny helpers ---------- */
-  const Select = ({ label, name, options }) => (
-    <label className="block my-2">
-      {label}
-      <select
-        className="ml-2 border"
-        value={answers[name]}
-        onChange={update(name)}
-      >
-        {options.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-    </label>
-  );
-
-  const NumberInput = ({ label, name, min = 0, step = 1 }) => (
-    <label className="block my-2">
-      {label}
-      <input
-        type="number"
-        className="ml-2 border px-1 w-28"
-        min={min}
-        step={step}
-        value={answers[name]}
-        onChange={update(name)}
-      />
-    </label>
-  );
+  const selectOptions = {
+    prov: ["BC", "ON", "QC", "AB", "MB", "NS", "NB", "NL", "PE", "SK", "NT", "YT", "NU"],
+    type: ["profit", "nonprofit", "public"],
+    ccpc: ["yes", "no"],
+    tech: ["ai", "dpa", "manuf", "idm", "other"],
+    trl: ["idea", "prototype", "pilot", "production"],
+    support: ["grant", "loan", "tax_credit"],
+    start: ["<3m", "3-12m", "1-3y", "3+y"],
+  };
 
   return (
-    <div className="max-w-xl mx-auto p-6 font-sans">
-      <h1 className="text-2xl font-bold text-[#245266] mb-4">
-        Funding Navigator
-      </h1>
-
-      <Select label="Province" name="prov" options={["BC", "AB", "ON", "QC"]} />
-      <Select
-        label="Entity type"
-        name="type"
-        options={["profit", "non-profit", "public"]}
-      />
-      <Select label="CCPC?" name="ccpc" options={["yes", "no"]} />
-      <Select label="Technology" name="tech" options={["ai", "software", "clean"]} />
-      {/* NEW – amount expected by backend */}
-      <NumberInput label="Funding amount ($)" name="amount" min={0} step={1000} />
-
-      <button
-        onClick={check}
-        className="mt-4 px-4 py-2 bg-[#245266] text-white rounded"
-        disabled={loading}
-      >
-        {loading ? "Checking…" : "Check Eligibility"}
-      </button>
-
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Funding Navigator</h1>
+      <form onSubmit={handleSubmit}>
+        {Object.keys(selectOptions).map((field) => (
+          <label key={field} className="block my-2">
+            {field}
+            <select
+              name={field}
+              value={answers[field]}
+              onChange={update(field)}
+              className="ml-2 border"
+            >
+              {selectOptions[field].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </label>
+        ))}
+        {["fte_idx", "rev_idx", "rd_idx", "trl_idx", "budget_idx"].map((field) => (
+          <label key={field} className="block my-2">
+            {field}
+            <input
+              type="number"
+              name={field}
+              min={0}
+              value={answers[field]}
+              onChange={update(field)}
+              className="ml-2 border w-20"
+            />
+          </label>
+        ))}
+        <label className="block my-2">
+          partner
+          <input
+            type="checkbox"
+            name="partner"
+            checked={answers.partner}
+            onChange={update("partner")}
+            className="ml-2"
+          />
+        </label>
+        <label className="block my-2">
+          compute
+          <input
+            type="checkbox"
+            name="compute"
+            checked={answers.compute}
+            onChange={update("compute")}
+            className="ml-2"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          {loading ? "Checking..." : "Check Eligibility"}
+        </button>
+      </form>
+      {error && <p className="text-red-600 mt-4">{error}</p>}
       {result && (
         <div className="mt-6">
-          <h2 className="text-xl font-semibold">Eligible programs</h2>
+          <h2 className="text-xl font-semibold">Eligible Programs</h2>
           <ul className="list-disc ml-6">
             {result.eligible.map((p) => (
-              <li key={p.program_id}>
-                {p.name} – {p.cap}
-              </li>
+              <li key={p.program_id}>{p.name}</li>
             ))}
           </ul>
-
-          <h2 className="text-xl font-semibold mt-4">Other programs to review</h2>
+          <h2 className="text-xl font-semibold mt-4">Other Programs to Review</h2>
           <ul className="list-disc ml-6">
             {result.other.map((p) => (
               <li key={p.program_id}>{p.name}</li>
@@ -126,3 +143,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
